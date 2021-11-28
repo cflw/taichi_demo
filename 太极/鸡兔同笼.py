@@ -4,10 +4,10 @@ ti.init(arch = ti.cpu)
 # v腿 = 94
 v头 = int(input("头数："))
 v腿 = int(input("腿数："))
-v建造 = ti.SparseMatrixBuilder(2, 2, dtype = int, max_num_triplets = 100)
+v建造 = ti.linalg.SparseMatrixBuilder(2, 2, dtype = int, max_num_triplets = 100)
 v向量 = ti.field(dtype = int, shape = 2)
 @ti.kernel
-def init(a建造: ti.SparseMatrixBuilder()):
+def init(a建造: ti.linalg.SparseMatrixBuilder()):
 	a建造[0, 0] += 1
 	a建造[0, 1] += 1
 	a建造[1, 0] += 2
@@ -20,7 +20,7 @@ v矩阵 = v建造.build()
 # print(v矩阵)
 # print(v向量)
 
-v解 = ti.SparseSolver(dtype = int, solver_type = "LU")
+v解 = ti.linalg.SparseSolver(dtype = int, solver_type = "LU")
 v解.analyze_pattern(v矩阵)
 v解.factorize(v矩阵)
 v答 = v解.solve(v向量)
