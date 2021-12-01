@@ -95,7 +95,7 @@ class C矩形:	#平面的
 	def __init__(self, a位置: t向量3, a尺寸: t向量2, a旋转: float, a颜色: t向量3, a材质):
 		self.m位置 = a位置
 		self.m半尺寸 = a尺寸 * 0.5
-		self.m旋转 = a旋转
+		self.m旋转 = a旋转	#简化计算,绕y轴旋转
 		self.m颜色 = a颜色
 		self.m材质 = a材质
 	@ti.func
@@ -131,11 +131,11 @@ class C矩形:	#平面的
 		return v碰撞, t, v交点, v交点法线, v前面, self.m颜色, self.m材质
 @ti.data_oriented
 class C图片:	#平面的
-	def __init__(self, a位置: t向量3, a尺寸: t向量2, a旋转: float):
+	def __init__(self, a位置: t向量3, a尺寸: t向量2, a旋转: float, a路径: str):
 		self.m位置 = a位置
 		self.m半尺寸 = a尺寸 * 0.5
 		self.m旋转 = a旋转	#简化计算,绕y轴旋转
-	def load(self, a路径: str):
+		#纹理
 		v文件 = Image.open(a路径)
 		if v文件.mode != "RGBA":
 			raise ValueError("只能载入带透明通道的图片")
@@ -144,8 +144,7 @@ class C图片:	#平面的
 		v填充 = np.zeros((v文件.width, v文件.height, 4), dtype = float)
 		for x in range(v文件.width):
 			for y in range(v文件.height):
-				y0 = v文件.height - y - 1
-				v填充[x, y0] = v数据[y0 * v文件.width + x]
+				v填充[x, y] = v数据[y * v文件.width + x]
 		self.m纹理 = ti.Vector.field(4, dtype = float, shape = (v文件.width, v文件.height))
 		self.m纹理.from_numpy(v填充)
 		v文件.close()
@@ -177,22 +176,22 @@ class C图片:	#平面的
 				#纹理采样
 				v纹理尺寸x = float(self.m纹理.shape[0])
 				v纹理尺寸y = float(self.m纹理.shape[1])
-				v纹理坐标x = v纹理尺寸y - (v相对交点.z / self.m半尺寸.x * 0.5 + 0.5) * v纹理尺寸x - 1	#x倒置?
+				v纹理坐标x = v纹理尺寸x - (v相对交点.z / self.m半尺寸.x * 0.5 + 0.5) * v纹理尺寸x - 1
 				v纹理坐标y = v纹理尺寸y - (v相对交点.y / self.m半尺寸.y * 0.5 + 0.5) * v纹理尺寸y - 1
 				v纹理坐标x0 = int(ti.floor(v纹理坐标x))
 				v纹理坐标x1 = int(ti.ceil(v纹理坐标x))
 				v纹理坐标y0 = int(ti.floor(v纹理坐标y))
 				v纹理坐标y1 = int(ti.ceil(v纹理坐标y))
 				v纹理坐标x_ = v纹理坐标x - v纹理坐标x0
-				v像素0 = lerp(self.m纹理[v纹理坐标x0, v纹理坐标y0], self.m纹理[v纹理坐标x1, v纹理坐标y0], v纹理坐标x_)
-				v像素1 = lerp(self.m纹理[v纹理坐标x0, v纹理坐标y1], self.m纹理[v纹理坐标x1, v纹理坐标y1], v纹理坐标x_)
-				v像素2 = lerp(v像素0, v像素1, v纹理坐标y - v纹理坐标y0)	#双线性纹理过滤
-				#根据像素的透明度,决定碰撞还是穿过
-				if ti.random() <= v像素2.w:
+				v颜色0 = lerp(self.m纹理[v纹理坐标x0, v纹理坐标y0], self.m纹理[v纹理坐标x1, v纹理坐标y0], v纹理坐标x_)
+				v颜色1 = lerp(self.m纹理[v纹理坐标x0, v纹理坐标y1], self.m纹理[v纹理坐标x1, v纹理坐标y1], v纹理坐标x_)
+				v颜色2 = lerp(v颜色0, v颜色1, v纹理坐标y - v纹理坐标y0)	#双线性纹理过滤
+				#根据颜色透明度,决定碰撞还是穿过
+				if ti.random() <= v颜色2.w:
 					v碰撞 = True
 					v交点 = a光线.at(t)
 					v交点法线 = t向量3(c, 0.0, s)
-					v颜色 = t向量3(v像素2.x, v像素2.y, v像素2.z)
+					v颜色 = t向量3(v颜色2.x, v颜色2.y, v颜色2.z)
 		return v碰撞, t, v交点, v交点法线, True, v颜色, E材质.e漫反射
 #===============================================================================
 # 渲染
