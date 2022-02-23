@@ -53,7 +53,7 @@ v取景框 = C取景框(v相机, v透视)
 def paint(frame: float):
 	for i, j in v缓冲:
 		v颜色 = t向量3(0, 0, 0)
-		for k in ti.static(range(c采样数)):
+		for k in range(c采样数):
 			u = (i + ti.random()) / c宽度
 			v = (j + ti.random()) / c高度
 			v光线 = v取景框.get_ray(u, v)

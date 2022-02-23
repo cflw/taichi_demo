@@ -70,9 +70,9 @@ class C球体:
 		if d > 0.0:
 			sqrt_d = ti.sqrt(d)
 			x = (-b - sqrt_d) / (2 * a)
-			if x < a最小值 or x > a最大值:
+			if x <= a最小值 or x >= a最大值:
 				x = (-b + sqrt_d) / (2 * a)
-				if x < a最小值 or x > a最大值:
+				if x <= a最小值 or x >= a最大值:
 					x = 0.0
 		else:
 			x = 0.0
@@ -113,21 +113,22 @@ class C矩形:	#平面的
 		v交点 = t向量3(0.0, 0.0, 0.0)
 		v交点法线 = t向量3(0.0, 0.0, 0.0)
 		v前面 = False
-		#有2种情况:
-		#1:相对位置是负,为了相交,相对方向应该是正的
-		#2:相对位置是正,为了相交,相对方向应该是负的
-		t = -v相对位置.x / v相对方向.x	#如果存在相交的情况,t应该是正的
-		v相对交点 = v相对位置 + v相对方向 * t
-		if t < a最小值 or t > a最大值:
-			pass
-		elif abs(v相对交点.z) < self.m半尺寸.x and abs(v相对交点.y) < self.m半尺寸.y:	#交点在矩形内
-			v碰撞 = True
-			v交点 = a光线.at(t)
-			v交点法线 = t向量3(c, 0.0, s)
-			if v相对位置.x >= 0:
-				v前面 = True
-			else:
-				v交点法线 = -v交点法线
+		if v相对方向.x != 0:	#光线和矩形不平行才能相交
+			#有2种情况:
+			#1:相对位置是负,为了相交,相对方向应该是正的
+			#2:相对位置是正,为了相交,相对方向应该是负的
+			t = -v相对位置.x / v相对方向.x	#如果存在相交的情况,t应该是正的
+			v相对交点 = v相对位置 + v相对方向 * t
+			if t <= a最小值 or t >= a最大值:
+				pass
+			elif abs(v相对交点.z) < self.m半尺寸.x and abs(v相对交点.y) < self.m半尺寸.y:	#交点在矩形内
+				v碰撞 = True
+				v交点 = a光线.at(t)
+				v交点法线 = t向量3(c, 0.0, s)
+				if v相对位置.x >= 0:
+					v前面 = True
+				else:
+					v交点法线 = -v交点法线
 		return v碰撞, t, v交点, v交点法线, v前面, self.m颜色, self.m材质
 @ti.data_oriented
 class C图片:	#平面的
@@ -170,7 +171,7 @@ class C图片:	#平面的
 		else:
 			t = -v相对位置.x / v相对方向.x
 			v相对交点 = v相对位置 + v相对方向 * t
-			if t < a最小值 or t > a最大值:
+			if t <= a最小值 or t >= a最大值:
 				pass
 			elif abs(v相对交点.z) < self.m半尺寸.x and abs(v相对交点.y) < self.m半尺寸.y:	#交点在矩形内
 				#纹理采样
@@ -228,7 +229,6 @@ class C场景:	#存放物体
 		for i in ti.static(range(len(self.m物体))):
 			v碰撞0, v距离0, v交点0, v交点法线0, v前面0, v颜色0, v材质0 = self.m物体[i].hit(a光线, c最小值, v距离)
 			if v碰撞0:
-				#python似乎只把i当做整数,其它太极作用域内的变量都不是整数.直接写 self.m物体[v选择] 会报错
 				v距离 = v距离0
 				v碰撞 = v碰撞0
 				v距离 = v距离0
@@ -264,4 +264,7 @@ class C取景框:	#由相机和透视投影计算得到
 		self.m垂直 = 2 * v半高 * v
 	@ti.func
 	def get_ray(self, u: float, v: float):
-		return C光线(self.m位置, self.m左下角 + u * self.m水平 + v * self.m垂直 - self.m位置)
+		v位置 = self.m位置
+		v方向 = self.m左下角 + u * self.m水平 + v * self.m垂直 - self.m位置
+		v光线 = C光线(v位置, v方向)
+		return v光线
